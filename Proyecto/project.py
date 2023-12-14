@@ -229,6 +229,18 @@ class Arcball(customtkinter.CTk):
         """
         Event triggered function on the event of a push on the button Reset
         """
+        self.M = np.array(
+            [[ -1,  -1, 1],   #Node 0
+            [ -1,   1, 1],    #Node 1
+            [1,   1, 1],      #Node 2
+            [1,  -1, 1],      #Node 3
+            [-1,  -1, -1],    #Node 4
+            [-1,  1, -1],     #Node 5
+            [1,   1, -1],     #Node 6
+            [1,  -1, -1]], dtype=float).transpose()
+        
+
+        self.update_cube() #Update the cube
         pass
 
     
