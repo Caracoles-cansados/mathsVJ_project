@@ -4,11 +4,29 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationTool
 
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import matplotlib.pyplot as plt
-
+import math
 import numpy as np
 
 customtkinter.set_appearance_mode("Dark")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("dark-blue")  # Themes: "blue" (standard), "green", "dark-blue"
+
+
+def Eaa2rotM(angle, axis):
+    '''
+    Returns the rotation matrix R able to rotate vectors an angle 'angle' (in rads) about the axis 'axis'
+    Axis = X Y Z
+    '''
+
+    #Dividimos el vector axis por su vector unitario
+    axis = axis/ np.linalg.norm(axis)
+    angle = angle * np.pi / 180
+
+    vec = np.array([0,0,0])
+
+    R = (np.identity(3) * np.cos(angle)) + ((1 - np.cos(angle)) * (axis.dot(axis.T))) + ((np.array([[0, -axis[2][0], axis[1][0]], [axis[2][0], 0, -axis[0][0]], [-axis[1][0], axis[0][0],0]])) * np.sin(angle));
+
+    return R
+
 
 
 class Arcball(customtkinter.CTk):
@@ -249,9 +267,26 @@ class Arcball(customtkinter.CTk):
         Event triggered function on the event of a push on the button button_AA
         """
         #Example on hot to get values from entries:
+        self.M = np.array(
+            [[ -1,  -1, 1],   #Node 0
+            [ -1,   1, 1],    #Node 1
+            [1,   1, 1],      #Node 2
+            [1,  -1, 1],      #Node 3
+            [-1,  -1, -1],    #Node 4
+            [-1,  1, -1],     #Node 5
+            [1,   1, -1],     #Node 6
+            [1,  -1, -1]], dtype=float).transpose()
+        
+
         angle = self.entry_AA_angle.get()
-        #Example string to number
-        print(float(angle)*2)
+        axisX = self.entry_AA_ax1.get()
+        axisY = self.entry_AA_ax2.get()
+        axisZ = self.entry_AA_ax3.get()
+        rotM = Eaa2rotM(angle, np.array([axisX, axisY, axisZ]))
+
+        self.M = self.M @rotM
+        self.update_cube()
+        
 
     
     def apply_rotV(self):
