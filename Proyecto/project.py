@@ -18,12 +18,21 @@ def Eaa2rotM(angle, axis):
     '''
 
     #Dividimos el vector axis por su vector unitario
-    axis = axis/ np.linalg.norm(axis)
+    '''axis = axis/ np.linalg.norm(axis)
     angle = angle * np.pi / 180
+    
+    R = (np.identity(3) * np.cos(angle)) + ((1 - np.cos(angle)) * (axis.dot(axis.T))) + ((np.array([[0, -axis[2], axis[1]], [axis[2], 0, -axis[0]], [-axis[1], axis[0],0]])) * np.sin(angle));
+    '''
+    axis_norm = np.linalg.norm(axis)
 
-    vec = np.array([0,0,0])
+    if axis_norm > 1:
+        axis = axis / axis_norm
 
-    R = (np.identity(3) * np.cos(angle)) + ((1 - np.cos(angle)) * (axis.dot(axis.T))) + ((np.array([[0, -axis[2][0], axis[1][0]], [axis[2][0], 0, -axis[0][0]], [-axis[1][0], axis[0][0],0]])) * np.sin(angle));
+    if axis.ndim == 1:
+        axis = axis.reshape((-1, 1))
+
+    Ux = np.array([[0, -axis[2, 0], axis[1, 0]], [axis[2, 0], 0, -axis[0, 0]], [-axis[1, 0], axis[0, 0], 0]])
+    R = np.eye(3) * np.cos(np.radians(angle)) + (1 - np.cos(np.radians(angle))) * np.outer(axis, axis) + np.sin(np.radians(angle)) * Ux
 
     return R
 
@@ -278,13 +287,18 @@ class Arcball(customtkinter.CTk):
             [1,  -1, -1]], dtype=float).transpose()
         
 
-        angle = self.entry_AA_angle.get()
-        axisX = self.entry_AA_ax1.get()
-        axisY = self.entry_AA_ax2.get()
-        axisZ = self.entry_AA_ax3.get()
+        angle = float(self.entry_AA_angle.get())
+        axisX = float(self.entry_AA_ax1.get())
+        axisY = float(self.entry_AA_ax2.get())
+        axisZ = float(self.entry_AA_ax3.get())
+        print("Aaaaaaaaaaaaaaaaa")
+        print(axisZ)
         rotM = Eaa2rotM(angle, np.array([axisX, axisY, axisZ]))
-
-        self.M = self.M @rotM
+    
+        #self.M = rotM@self.M 
+        self.M = np.dot(rotM, self.M)
+        print(self.M)
+        
         self.update_cube()
         
 
