@@ -38,6 +38,8 @@ def Eaa2rotM(angle, axis):
 
 
 
+
+
 class Arcball(customtkinter.CTk):
 
     def __init__(self):
@@ -252,6 +254,52 @@ class Arcball(customtkinter.CTk):
         self.entry_RotM_33.grid(row=2, column=3, padx=(2,0), pady=(2,0), sticky="ew")
     
 
+
+    def setRotMatrix(self, rotM):
+        """
+        Funcion que hace cambiar la rotM de abajo
+        """
+        self.entry_RotM_11.configure(state="normal")
+        self.entry_RotM_12.configure(state="normal")
+        self.entry_RotM_13.configure(state="normal")
+        self.entry_RotM_21.configure(state="normal")
+        self.entry_RotM_22.configure(state="normal")
+        self.entry_RotM_23.configure(state="normal")
+        self.entry_RotM_31.configure(state="normal")
+        self.entry_RotM_32.configure(state="normal")
+        self.entry_RotM_33.configure(state="normal")
+
+        self.entry_RotM_11.delete(0, 99)
+        self.entry_RotM_12.delete(0, 99)
+        self.entry_RotM_13.delete(0, 99)
+        self.entry_RotM_21.delete(0, 99)
+        self.entry_RotM_22.delete(0, 99)
+        self.entry_RotM_23.delete(0, 99)
+        self.entry_RotM_31.delete(0, 99)
+        self.entry_RotM_32.delete(0, 99)
+        self.entry_RotM_33.delete(0, 99)
+
+        self.entry_RotM_11.insert(0,rotM[0][0])
+        self.entry_RotM_12.insert(0,rotM[0][1])
+        self.entry_RotM_13.insert(0,rotM[0][2])
+        self.entry_RotM_21.insert(0,rotM[1][0])
+        self.entry_RotM_22.insert(0,rotM[1][1])
+        self.entry_RotM_23.insert(0,rotM[1][2])
+        self.entry_RotM_31.insert(0,rotM[2][0])
+        self.entry_RotM_32.insert(0,rotM[2][1])
+        self.entry_RotM_33.insert(0,rotM[2][2])
+
+        self.entry_RotM_11.configure(state="disabled")
+        self.entry_RotM_12.configure(state="disabled")
+        self.entry_RotM_13.configure(state="disabled")
+        self.entry_RotM_21.configure(state="disabled")
+        self.entry_RotM_22.configure(state="disabled")
+        self.entry_RotM_23.configure(state="disabled")
+        self.entry_RotM_31.configure(state="disabled")
+        self.entry_RotM_32.configure(state="disabled")
+        self.entry_RotM_33.configure(state="disabled")
+
+
     def resetbutton_pressed(self):
         """
         Event triggered function on the event of a push on the button Reset
@@ -276,28 +324,20 @@ class Arcball(customtkinter.CTk):
         Event triggered function on the event of a push on the button button_AA
         """
         #Example on hot to get values from entries:
-        self.M = np.array(
-            [[ -1,  -1, 1],   #Node 0
-            [ -1,   1, 1],    #Node 1
-            [1,   1, 1],      #Node 2
-            [1,  -1, 1],      #Node 3
-            [-1,  -1, -1],    #Node 4
-            [-1,  1, -1],     #Node 5
-            [1,   1, -1],     #Node 6
-            [1,  -1, -1]], dtype=float).transpose()
+       
+        self.resetbutton_pressed()
         
 
         angle = float(self.entry_AA_angle.get())
         axisX = float(self.entry_AA_ax1.get())
         axisY = float(self.entry_AA_ax2.get())
         axisZ = float(self.entry_AA_ax3.get())
-        print("Aaaaaaaaaaaaaaaaa")
-        print(axisZ)
         rotM = Eaa2rotM(angle, np.array([axisX, axisY, axisZ]))
     
         #self.M = rotM@self.M 
+        
         self.M = np.dot(rotM, self.M)
-        print(self.M)
+        self.setRotMatrix(rotM)
         
         self.update_cube()
         
