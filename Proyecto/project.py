@@ -17,27 +17,61 @@ def Eaa2rotM(angle, axis):
     Axis = X Y Z
     '''
 
-    #Dividimos el vector axis por su vector unitario
-    '''axis = axis/ np.linalg.norm(axis)
-    angle = angle * np.pi / 180
-    
-    R = (np.identity(3) * np.cos(angle)) + ((1 - np.cos(angle)) * (axis.dot(axis.T))) + ((np.array([[0, -axis[2], axis[1]], [axis[2], 0, -axis[0]], [-axis[1], axis[0],0]])) * np.sin(angle));
-    '''
     axis_norm = np.linalg.norm(axis)
+    axis = axis / axis_norm
 
-    if axis_norm > 1:
-        axis = axis / axis_norm
-
-    if axis.ndim == 1:
-        axis = axis.reshape((-1, 1))
-
-    Ux = np.array([[0, -axis[2, 0], axis[1, 0]], [axis[2, 0], 0, -axis[0, 0]], [-axis[1, 0], axis[0, 0], 0]])
-    R = np.eye(3) * np.cos(np.radians(angle)) + (1 - np.cos(np.radians(angle))) * np.outer(axis, axis) + np.sin(np.radians(angle)) * Ux
+    R = np.eye(3) * np.cos(np.radians(angle)) + (1 - np.cos(np.radians(angle))) * np.outer(axis, axis) + np.sin(np.radians(angle)) * np.array([[0, -axis[2, 0], axis[1, 0]], [axis[2, 0], 0, -axis[0, 0]], [-axis[1, 0], axis[0, 0], 0]])
 
     return R
 
 
+def eAngles2rotM(yaw,pitch,roll): #psi ψ, theta θ , phi φ
+    '''
+    Given a set of Euler angles returns the rotation matrix R
+    '''
+    ψ = yaw * np.pi/180;
+    θ = pitch* np.pi/180;
+    φ = roll* np.pi/180;
 
+    R = np.array([[ np.cos(θ) * np.cos(ψ), np.cos(ψ)*np.sin(θ)*np.sin(φ) - np.cos(φ)*np.sin(ψ), np.cos(ψ)*np.cos(φ)*np.sin(θ) + np.sin(ψ)*np.sin(φ)],
+                  [ np.cos(θ) * np.sin(ψ), np.sin(ψ)*np.sin(θ)*np.sin(φ) + np.cos(φ)*np.cos(ψ), np.sin(ψ)*np.sin(θ)*np.cos(φ) - np.cos(ψ)*np.sin(φ)],
+                  [ -np.sin(θ), np.cos(θ)*np.sin(φ), np.cos(θ)*np.cos(φ)]
+                  ])
+
+
+
+    return R
+
+
+def quaternion_rotation_matrix(Q):
+
+
+    q0 = Q[0]
+    q1 = Q[1]
+    q2 = Q[2]
+    q3 = Q[3]
+
+
+    r00 = q0**2 + q1**2 - q2**2 - q3**2
+    r01 = 2 * (q1*q2) - 2*(q0*q3)
+    r02 = 2 * (q1*q3) + 2*(q0*q2)
+
+
+    r10 = 2 * (q1*q2) + 2*(q0*q3)
+    r11 = q0**2 - q1**2 + q2**2 - q3**2
+    r12 = 2 * (q2*q3) - 2*(q0*q1)
+
+
+    r20 = 2 * (q1*q3) - 2*(q0*q2)
+    r21 = 2 * (q2*q3) + 2*(q0*q1)
+    r22 = q0**2 - q1**2 - q2**2 + q3**2
+
+
+    rot_matrix = np.array([[r00, r01, r02],
+                           [r10, r11, r12],
+                           [r20, r21, r22]])
+
+    return rot_matrix
 
 
 class Arcball(customtkinter.CTk):
@@ -347,6 +381,19 @@ class Arcball(customtkinter.CTk):
         """
         Event triggered function on the event of a push on the button button_rotV 
         """
+        self.resetbutton_pressed()
+
+        rV = np.array([[float(self.entry_rotV_1.get())],[float(self.entry_rotV_2.get())],[float(self.entry_rotV_3.get())]]);
+        axisSacado = rV / np.linalg.norm(rV)
+        angleSacado = np.linalg.norm(rV);
+
+        rotM = Eaa2rotM(angleSacado, axisSacado)
+        self.M = np.dot(rotM, self.M)
+        self.setRotMatrix(rotM)
+        
+        self.update_cube()
+
+
         pass
 
     
@@ -354,6 +401,17 @@ class Arcball(customtkinter.CTk):
         """
         Event triggered function on the event of a push on the button button_EA
         """
+        
+        self.resetbutton_pressed()
+        
+        rotM = eAngles2rotM(float(self.entry_EA_yaw.get()),float(self.entry_EA_pitch.get()),  float(self.entry_EA_roll.get()));
+        self.M = np.dot(rotM, self.M)
+        self.setRotMatrix(rotM)
+        
+        self.update_cube()
+
+
+
         pass
 
     
@@ -361,6 +419,25 @@ class Arcball(customtkinter.CTk):
         """
         Event triggered function on the event of a push on the button button_quat
         """
+
+        self.resetbutton_pressed()
+
+        Q = np.zeros(4)
+        Q[0] = float(self.entry_quat_0.get());
+        Q[1] = float(self.entry_quat_1.get());
+        Q[2] = float(self.entry_quat_2.get());
+        Q[3] = float(self.entry_quat_3.get());
+
+        Q = Q / np.linalg.norm(Q)
+
+        rotM = quaternion_rotation_matrix(Q);
+        self.M = np.dot(rotM, self.M)
+        self.setRotMatrix(rotM)
+        
+        self.update_cube()
+
+
+
         pass
 
     
