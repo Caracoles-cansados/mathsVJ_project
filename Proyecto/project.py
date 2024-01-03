@@ -18,7 +18,13 @@ def Eaa2rotM(angle, axis):
     '''
 
     axis_norm = np.linalg.norm(axis)
-    axis = axis / axis_norm
+
+    if axis_norm > 1:
+        axis = axis / axis_norm
+
+    if axis.ndim == 1:
+        axis = axis.reshape((-1, 1))
+    
 
     R = np.eye(3) * np.cos(np.radians(angle)) + (1 - np.cos(np.radians(angle))) * np.outer(axis, axis) + np.sin(np.radians(angle)) * np.array([[0, -axis[2, 0], axis[1, 0]], [axis[2, 0], 0, -axis[0, 0]], [-axis[1, 0], axis[0, 0], 0]])
 
@@ -348,6 +354,10 @@ class Arcball(customtkinter.CTk):
             [1,   1, -1],     #Node 6
             [1,  -1, -1]], dtype=float).transpose()
         
+        rotM = np.eye(3);
+
+        self.setRotMatrix(rotM)
+
 
         self.update_cube() #Update the cube
         pass
