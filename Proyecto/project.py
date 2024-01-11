@@ -79,6 +79,21 @@ def quaternion_rotation_matrix(Q):
 
     return rot_matrix
 
+def to_quaternion(roll, pitch, yaw):
+    # Abbreviations for the various angular functions
+    cr = math.cos(roll * 0.5)
+    sr = math.sin(roll * 0.5)
+    cp = math.cos(pitch * 0.5)
+    sp = math.sin(pitch * 0.5)
+    cy = math.cos(yaw * 0.5)
+    sy = math.sin(yaw * 0.5)
+
+    qw = cr * cp * cy + sr * sp * sy
+    qx = sr * cp * cy - cr * sp * sy
+    qy = cr * sp * cy + sr * cp * sy
+    qz = cr * cp * sy - sr * sp * cy
+
+    return qw, qx, qy, qz
 
 class Arcball(customtkinter.CTk):
 
@@ -470,13 +485,45 @@ class Arcball(customtkinter.CTk):
         if self.pressed: #Only triggered if previous click
             x_fig,y_fig= self.canvas_coordinates_to_figure_coordinates(event.x,event.y) #Extract viewport coordinates
             
+            '''
             print("x: ", x_fig)
             print("y", y_fig)
             print("r2", x_fig*x_fig+y_fig*y_fig)
+            '''
 
-            R = np.array([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
+            #fALLO ESTA AL NO PILLAR LA DISTANCIA ENTRE LA X,Y DEL CLICK Y LA DE MANTENER, pork normalizado en la esquina de un numero muy grnade
+            #y normalizado en el centro da un numero muy cercano a 0
+            (canvas_width,canvas_height)=self.canvas.get_width_height()
+            normalized_x = (2.0 * x_fig / canvas_width) - 1.0
+            normalized_y = 1.0 - (2.0 * y_fig / canvas_height)
+
+
+          
+
+            angle_x = -normalized_x * np.pi * 4
+            angle_y = -normalized_y * np.pi * 4
+
+            
+            quaternion_x = np.array([np.cos(angle_x / 2), np.sin(angle_x / 2), 0, 0])
+            quaternion_y = np.array([np.cos(angle_y / 2), 0, 0, -np.sin(angle_y / 2)])
+
+           
+            quaternion_x /= np.linalg.norm(quaternion_x)
+            quaternion_y /= np.linalg.norm(quaternion_y)
+
+            
+            quat = np.array([
+                quaternion_y[0]*quaternion_x[0] - quaternion_y[1]*quaternion_x[1] - quaternion_y[2]*quaternion_x[2] - quaternion_y[3]*quaternion_x[3],
+                quaternion_y[0]*quaternion_x[1] + quaternion_y[1]*quaternion_x[0] + quaternion_y[2]*quaternion_x[3] - quaternion_y[3]*quaternion_x[2],
+                quaternion_y[0]*quaternion_x[2] - quaternion_y[1]*quaternion_x[3] + quaternion_y[2]*quaternion_x[0] + quaternion_y[3]*quaternion_x[1],
+                quaternion_y[0]*quaternion_x[3] + quaternion_y[1]*quaternion_x[2] - quaternion_y[2]*quaternion_x[1] + quaternion_y[3]*quaternion_x[0]
+            ])
+
+            RotM = quaternion_rotation_matrix(quat);
+
+            #R = np.array([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
                     
-            self.M = R.dot(self.M) #Modify the vertices matrix with a rotation matrix M
+            self.M = RotM.dot(self.M) #Modify the vertices matrix with a rotation matrix M
 
             self.update_cube() #Update the cube
 
