@@ -497,11 +497,18 @@ class Arcball(customtkinter.CTk):
             normalized_x = (2.0 * x_fig / canvas_width) - 1.0
             normalized_y = 1.0 - (2.0 * y_fig / canvas_height)
 
+            center_x, center_y = canvas_width / 2, canvas_height / 2
+            direction_x = x_fig - center_x
+            direction_y = y_fig - center_y
+
 
           
 
             angle_x = -normalized_x * np.pi * 4
             angle_y = -normalized_y * np.pi * 4
+
+            #angle_x = direction_x * np.pi * 0.00001
+            #angle_y = direction_y * np.pi * 0.00001
 
             
             quaternion_x = np.array([np.cos(angle_x / 2), np.sin(angle_x / 2), 0, 0])
@@ -524,7 +531,7 @@ class Arcball(customtkinter.CTk):
             #R = np.array([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
                     
             self.M = RotM.dot(self.M) #Modify the vertices matrix with a rotation matrix M
-
+            self.setRotMatrix(RotM)
             self.update_cube() #Update the cube
 
 
