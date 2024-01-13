@@ -17,7 +17,9 @@ def Eaa2rotM(angle, axis):
     Axis = X Y Z
     '''
 
+    
     axis_norm = np.linalg.norm(axis)
+    
 
     if axis_norm > 1:
         axis = axis / axis_norm
@@ -47,6 +49,20 @@ def eAngles2rotM(yaw,pitch,roll): #psi ψ, theta θ , phi φ
 
 
     return R
+
+
+def axis_angle_to_quaternion(angle, axis):
+    # Normalize the axis vector
+    axis = axis / np.linalg.norm(axis)
+    
+    # Calculate half-angle
+    angle /= 2.0
+    
+    # Calculate quaternion components
+    w = np.cos(angle)
+    xyz = axis * np.sin(angle)
+    
+    return np.array([w, *xyz])
 
 
 def quaternion_rotation_matrix(Q):
@@ -307,6 +323,8 @@ class Arcball(customtkinter.CTk):
         self.entry_RotM_33.insert(0,"1.0")
         self.entry_RotM_33.configure(state="disabled")
         self.entry_RotM_33.grid(row=2, column=3, padx=(2,0), pady=(2,0), sticky="ew")
+
+        self.lastM = np.array([0,0,0])
     
 
 
@@ -475,6 +493,34 @@ class Arcball(customtkinter.CTk):
         if event.button:
             self.pressed = True # Bool to control(activate) a drag (click+move)
 
+            x_fig,y_fig= self.canvas_coordinates_to_figure_coordinates(event.x,event.y) #Extract viewport coordinates
+            '''r = 3;
+            self.lastM = np.array([0,0,0]);
+            if x_fig*x_fig + y_fig*y_fig < (r*r)/2:
+                self.lastM[0] = x_fig;
+                self.lastM[1] = y_fig;
+                self.lastM[2] = abs(np.sqrt(r*r - x_fig*x_fig - y_fig*y_fig));
+            else:
+                self.lastM[0] = r*x_fig;
+                self.lastM[1] = r*y_fig;
+                self.lastM[2] = r*(r*r / 2* abs(np.sqrt(x_fig*x_fig - y_fig*y_fig)));
+                '''
+            radius = 3
+
+            # Assuming xmouse and ymouse are defined
+            xmouse = x_fig  # Replace with the actual value
+            ymouse = y_fig  # Replace with the actual value
+
+            if (xmouse**2 + ymouse**2) < 0.5 * radius**2:
+                Z = np.sqrt(radius**2 - xmouse**2 - ymouse**2)
+                m0 = np.array([xmouse, ymouse, Z])
+            else:
+                Z = (radius**2) / 2 * np.sqrt(xmouse**2 + ymouse**2)
+                m0 = np.array([xmouse, ymouse, Z]) / np.sqrt(xmouse**2 + ymouse**2 + Z**2)
+
+            self.lastM = m0;
+            
+
 
     def onmove(self,event):
         """
@@ -491,6 +537,7 @@ class Arcball(customtkinter.CTk):
             print("r2", x_fig*x_fig+y_fig*y_fig)
             '''
 
+            '''
             #fALLO ESTA AL NO PILLAR LA DISTANCIA ENTRE LA X,Y DEL CLICK Y LA DE MANTENER, pork normalizado en la esquina de un numero muy grnade
             #y normalizado en el centro da un numero muy cercano a 0
             (canvas_width,canvas_height)=self.canvas.get_width_height()
@@ -533,6 +580,59 @@ class Arcball(customtkinter.CTk):
             self.M = RotM.dot(self.M) #Modify the vertices matrix with a rotation matrix M
             self.setRotMatrix(RotM)
             self.update_cube() #Update the cube
+            '''
+            '''
+            r = 3
+            m = np.array([0, 0, 0])
+
+            if x_fig*x_fig + y_fig*y_fig < (r*r)/2:
+                m[0] = x_fig
+                m[1] = y_fig
+                m[2] = abs(np.sqrt(r*r - x_fig*x_fig - y_fig*y_fig))
+            else:
+                m[0] = r * x_fig
+                m[1] = r * y_fig
+                argument_sqrt = abs(x_fig*x_fig - y_fig*y_fig)
+                m[2] = r * (r*r / 2 * np.sqrt(argument_sqrt)) if argument_sqrt >= 0 else 0
+
+            axis = np.cross(self.lastM, m)  # Correct order of operands in cross product
+            angle = math.acos(np.dot(m, self.lastM) / (np.linalg.norm(self.lastM) * np.linalg.norm(m)))
+
+            print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+            print(axis)
+            print(angle)
+            '''
+            
+            radius = 20
+
+            # Assuming xmouse and ymouse are defined
+            dist = x_fig*x_fig+y_fig*y_fig
+            
+
+            if dist < 40:
+
+                if (x_fig**2 + y_fig**2) < 0.5 * radius**2:
+                    Z = np.sqrt(radius**2 - x_fig**2 - y_fig**2)
+                    m1 = np.array([x_fig, y_fig, Z])
+                else:
+                    Z = (radius**2) / 2 * np.sqrt(x_fig**2 + y_fig**2)
+                    m1 = radius*(np.array([x_fig, y_fig, Z])) / np.sqrt(x_fig**2 + y_fig**2 + Z**2)
+
+
+                axis = -np.cross(m1, self.lastM)
+                axisNew = np.array([0,0,0]);
+                axisNew[0] = -axis[1]
+                axisNew[1] = axis[2]
+                axisNew[2] = axis[0]
+                # Obtain angle
+                angle = np.degrees(np.arccos(np.dot(m1, self.lastM) / (np.linalg.norm(m1) * np.linalg.norm(self.lastM)))) * 1
+
+
+                self.lastM = m1.copy()
+                RotM = Eaa2rotM(angle, axisNew);
+                self.M = RotM.dot(self.M)  # Modify the vertices matrix with a rotation matrix M
+                self.setRotMatrix(self.M)
+                self.update_cube()  # Update the cube
 
 
     def onrelease(self,event):
