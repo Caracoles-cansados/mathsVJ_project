@@ -29,7 +29,9 @@ def Eaa2rotM(angle, axis):
     
 
     R = np.eye(3) * np.cos(np.radians(angle)) + (1 - np.cos(np.radians(angle))) * np.outer(axis, axis) + np.sin(np.radians(angle)) * np.array([[0, -axis[2, 0], axis[1, 0]], [axis[2, 0], 0, -axis[0, 0]], [-axis[1, 0], axis[0, 0], 0]])
-
+    
+  
+    print(R)
     return R
 
 
@@ -94,6 +96,7 @@ def quaternion_rotation_matrix(Q):
                            [r20, r21, r22]])
 
     return rot_matrix
+
 
 def to_quaternion(roll, pitch, yaw):
     # Abbreviations for the various angular functions
@@ -352,6 +355,29 @@ class Arcball(customtkinter.CTk):
         self.entry_RotM_32.delete(0, 99)
         self.entry_RotM_33.delete(0, 99)
 
+        '''
+        if(rotM[0][0] < 1.0e-20):
+            rotM[0][0] = 0
+        if(rotM[0][1] < 1.0e-20):
+            rotM[0][1] = 0
+        if(rotM[0][2] < 1.0e-20):
+            rotM[0][2] = 0
+        if(rotM[1][0] < 1.0e-20):
+            rotM[1][0] = 0
+        if(rotM[1][1] < 1.0e-20):
+            rotM[1][1] = 0
+        if(rotM[1][2] < 1.0e-20):
+            rotM[1][2] = 0
+        if(rotM[2][0] < 1.0e-20):
+            rotM[2][0] = 0
+        if(rotM[2][1] < 1.0e-20):
+            rotM[2][1] = 0
+        if(rotM[2][2] < 1.0e-20):
+            rotM[2][2] = 0
+        '''
+
+
+
         self.entry_RotM_11.insert(0,rotM[0][0])
         self.entry_RotM_12.insert(0,rotM[0][1])
         self.entry_RotM_13.insert(0,rotM[0][2])
@@ -371,6 +397,86 @@ class Arcball(customtkinter.CTk):
         self.entry_RotM_31.configure(state="disabled")
         self.entry_RotM_32.configure(state="disabled")
         self.entry_RotM_33.configure(state="disabled")
+
+    def rotMToAngleAxis(self, rotM):
+
+        print(rotM)
+        R = rotM[:3,:3]
+
+        angle = np.arccos((np.trace(R) - 1) / 2)
+        axis = (R - R.T) / (2 * np.sin(angle))
+        axis_org = np.array([axis[2, 1], axis[0, 2], axis[1, 0]])
+
+        angle = np.rad2deg(angle)
+
+        self.entry_AA_angle.delete(0,99)
+        self.entry_AA_angle.insert(0, angle)
+
+        self.entry_AA_ax1.delete(0,99);
+        self.entry_AA_ax2.delete(0,99);
+        self.entry_AA_ax3.delete(0,99);
+        self.entry_AA_ax1.insert(0,axis_org[0]);
+        self.entry_AA_ax2.insert(0,axis_org[1]);
+        self.entry_AA_ax3.insert(0,axis_org[2]);
+
+
+        
+    
+    def rotMToRotationVector(self, rotM):
+        R = rotM[:3,:3]
+
+        angle = np.arccos((np.trace(R) - 1) / 2)
+        axis = (R - R.T) / (2 * np.sin(angle))
+        axis_org = np.array([axis[2, 1], axis[0, 2], axis[1, 0]])
+
+        rotV = axis_org * angle;
+
+
+       
+        self.entry_rotV_1.delete(0,99);
+        self.entry_rotV_2.delete(0,99);
+        self.entry_rotV_3.delete(0,99);
+        self.entry_rotV_1.insert(0,rotV[0]);
+        self.entry_rotV_2.insert(0,rotV[1]);
+        self.entry_rotV_3.insert(0,rotV[2]);
+        
+    
+    def rotMToEuler(self, rotM):
+        R = rotM[:3,:3]
+        pitch = np.arcsin(-R[2][0])
+        yaw = np.arctan2(R[1][0]/np.cos(pitch), R[0][0]/np.cos(pitch))
+        roll = np.arctan2(R[2][1]/np.cos(pitch), R[2][2]/np.cos(pitch))
+
+        self.entry_EA_pitch.delete(0,99);
+        self.entry_EA_yaw.delete(0,99);
+        self.entry_EA_roll.delete(0,99);
+        self.entry_EA_pitch.insert(0,pitch);
+        self.entry_EA_yaw.insert(0,yaw);
+        self.entry_EA_roll.insert(0,roll);
+
+    def rotMToQuat(self, rotM):
+
+        R = rotM[:3,:3]
+
+        angle = np.arccos((np.trace(R) - 1) / 2)
+        axis = (R - R.T) / (2 * np.sin(angle))
+        axis_org = np.array([axis[2, 1], axis[0, 2], axis[1, 0]])
+
+        Q = np.zeros([4]);
+        Q[0] = np.cos(angle/2)
+        Q[1] = np.sin(angle/2) * axis_org[0]
+        Q[2] = np.sin(angle/2) * axis_org[1]
+        Q[3] = np.sin(angle/2) * axis_org[2]
+
+        self.entry_quat_0.delete(0,99)
+        self.entry_quat_1.delete(0,99)
+        self.entry_quat_2.delete(0,99)
+        self.entry_quat_3.delete(0,99)
+        self.entry_quat_0.insert(0,Q[0])
+        self.entry_quat_1.insert(0,Q[1])
+        self.entry_quat_2.insert(0,Q[2])
+        self.entry_quat_3.insert(0,Q[3])
+
 
 
     def resetbutton_pressed(self):
@@ -494,29 +600,15 @@ class Arcball(customtkinter.CTk):
             self.pressed = True # Bool to control(activate) a drag (click+move)
 
             x_fig,y_fig= self.canvas_coordinates_to_figure_coordinates(event.x,event.y) #Extract viewport coordinates
-            '''r = 3;
-            self.lastM = np.array([0,0,0]);
-            if x_fig*x_fig + y_fig*y_fig < (r*r)/2:
-                self.lastM[0] = x_fig;
-                self.lastM[1] = y_fig;
-                self.lastM[2] = abs(np.sqrt(r*r - x_fig*x_fig - y_fig*y_fig));
-            else:
-                self.lastM[0] = r*x_fig;
-                self.lastM[1] = r*y_fig;
-                self.lastM[2] = r*(r*r / 2* abs(np.sqrt(x_fig*x_fig - y_fig*y_fig)));
-                '''
+           
             radius = 3
 
-            # Assuming xmouse and ymouse are defined
-            xmouse = x_fig  # Replace with the actual value
-            ymouse = y_fig  # Replace with the actual value
-
-            if (xmouse**2 + ymouse**2) < 0.5 * radius**2:
-                Z = np.sqrt(radius**2 - xmouse**2 - ymouse**2)
-                m0 = np.array([xmouse, ymouse, Z])
+            if (x_fig**2 + y_fig**2) < 0.5 * radius**2:
+                Z = np.sqrt(radius**2 - x_fig**2 - y_fig**2)
+                m0 = np.array([x_fig, y_fig, Z])
             else:
-                Z = (radius**2) / 2 * np.sqrt(xmouse**2 + ymouse**2)
-                m0 = np.array([xmouse, ymouse, Z]) / np.sqrt(xmouse**2 + ymouse**2 + Z**2)
+                Z = (radius**2) / 2 * np.sqrt(x_fig**2 + y_fig**2)
+                m0 = np.array([x_fig, y_fig, Z]) / np.sqrt(x_fig**2 + y_fig**2 + Z**2)
 
             self.lastM = m0;
             
@@ -530,79 +622,7 @@ class Arcball(customtkinter.CTk):
         #Example
         if self.pressed: #Only triggered if previous click
             x_fig,y_fig= self.canvas_coordinates_to_figure_coordinates(event.x,event.y) #Extract viewport coordinates
-            
-            '''
-            print("x: ", x_fig)
-            print("y", y_fig)
-            print("r2", x_fig*x_fig+y_fig*y_fig)
-            '''
 
-            '''
-            #fALLO ESTA AL NO PILLAR LA DISTANCIA ENTRE LA X,Y DEL CLICK Y LA DE MANTENER, pork normalizado en la esquina de un numero muy grnade
-            #y normalizado en el centro da un numero muy cercano a 0
-            (canvas_width,canvas_height)=self.canvas.get_width_height()
-            normalized_x = (2.0 * x_fig / canvas_width) - 1.0
-            normalized_y = 1.0 - (2.0 * y_fig / canvas_height)
-
-            center_x, center_y = canvas_width / 2, canvas_height / 2
-            direction_x = x_fig - center_x
-            direction_y = y_fig - center_y
-
-
-          
-
-            angle_x = -normalized_x * np.pi * 4
-            angle_y = -normalized_y * np.pi * 4
-
-            #angle_x = direction_x * np.pi * 0.00001
-            #angle_y = direction_y * np.pi * 0.00001
-
-            
-            quaternion_x = np.array([np.cos(angle_x / 2), np.sin(angle_x / 2), 0, 0])
-            quaternion_y = np.array([np.cos(angle_y / 2), 0, 0, -np.sin(angle_y / 2)])
-
-           
-            quaternion_x /= np.linalg.norm(quaternion_x)
-            quaternion_y /= np.linalg.norm(quaternion_y)
-
-            
-            quat = np.array([
-                quaternion_y[0]*quaternion_x[0] - quaternion_y[1]*quaternion_x[1] - quaternion_y[2]*quaternion_x[2] - quaternion_y[3]*quaternion_x[3],
-                quaternion_y[0]*quaternion_x[1] + quaternion_y[1]*quaternion_x[0] + quaternion_y[2]*quaternion_x[3] - quaternion_y[3]*quaternion_x[2],
-                quaternion_y[0]*quaternion_x[2] - quaternion_y[1]*quaternion_x[3] + quaternion_y[2]*quaternion_x[0] + quaternion_y[3]*quaternion_x[1],
-                quaternion_y[0]*quaternion_x[3] + quaternion_y[1]*quaternion_x[2] - quaternion_y[2]*quaternion_x[1] + quaternion_y[3]*quaternion_x[0]
-            ])
-
-            RotM = quaternion_rotation_matrix(quat);
-
-            #R = np.array([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
-                    
-            self.M = RotM.dot(self.M) #Modify the vertices matrix with a rotation matrix M
-            self.setRotMatrix(RotM)
-            self.update_cube() #Update the cube
-            '''
-            '''
-            r = 3
-            m = np.array([0, 0, 0])
-
-            if x_fig*x_fig + y_fig*y_fig < (r*r)/2:
-                m[0] = x_fig
-                m[1] = y_fig
-                m[2] = abs(np.sqrt(r*r - x_fig*x_fig - y_fig*y_fig))
-            else:
-                m[0] = r * x_fig
-                m[1] = r * y_fig
-                argument_sqrt = abs(x_fig*x_fig - y_fig*y_fig)
-                m[2] = r * (r*r / 2 * np.sqrt(argument_sqrt)) if argument_sqrt >= 0 else 0
-
-            axis = np.cross(self.lastM, m)  # Correct order of operands in cross product
-            angle = math.acos(np.dot(m, self.lastM) / (np.linalg.norm(self.lastM) * np.linalg.norm(m)))
-
-            print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-            print(axis)
-            print(angle)
-            '''
-            
             radius = 20
 
             # Assuming xmouse and ymouse are defined
@@ -632,6 +652,10 @@ class Arcball(customtkinter.CTk):
                 RotM = Eaa2rotM(angle, axisNew);
                 self.M = RotM.dot(self.M)  # Modify the vertices matrix with a rotation matrix M
                 self.setRotMatrix(self.M)
+                self.rotMToAngleAxis(self.M);
+                self.rotMToRotationVector(self.M);
+                self.rotMToEuler(self.M);
+                self.rotMToQuat(self.M);
                 self.update_cube()  # Update the cube
 
 
