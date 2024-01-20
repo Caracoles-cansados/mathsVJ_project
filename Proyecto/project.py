@@ -335,6 +335,9 @@ class Arcball(customtkinter.CTk):
         """
         Funcion que hace cambiar la rotM de abajo
         """
+
+        rotM = rotM.copy();
+
         self.entry_RotM_11.configure(state="normal")
         self.entry_RotM_12.configure(state="normal")
         self.entry_RotM_13.configure(state="normal")
@@ -355,7 +358,7 @@ class Arcball(customtkinter.CTk):
         self.entry_RotM_32.delete(0, 99)
         self.entry_RotM_33.delete(0, 99)
 
-        '''
+        
         if(rotM[0][0] < 1.0e-20):
             rotM[0][0] = 0
         if(rotM[0][1] < 1.0e-20):
@@ -374,7 +377,7 @@ class Arcball(customtkinter.CTk):
             rotM[2][1] = 0
         if(rotM[2][2] < 1.0e-20):
             rotM[2][2] = 0
-        '''
+        
 
 
 
@@ -521,7 +524,9 @@ class Arcball(customtkinter.CTk):
         
         self.M = np.dot(rotM, self.M)
         self.setRotMatrix(rotM)
-        
+        self.rotMToRotationVector(self.M);
+        self.rotMToEuler(self.M);
+        self.rotMToQuat(self.M);
         self.update_cube()
         
 
@@ -539,7 +544,9 @@ class Arcball(customtkinter.CTk):
         rotM = Eaa2rotM(angleSacado, axisSacado)
         self.M = np.dot(rotM, self.M)
         self.setRotMatrix(rotM)
-        
+        self.rotMToAngleAxis(self.M);
+        self.rotMToEuler(self.M);
+        self.rotMToQuat(self.M);
         self.update_cube()
 
 
@@ -556,7 +563,9 @@ class Arcball(customtkinter.CTk):
         rotM = eAngles2rotM(float(self.entry_EA_yaw.get()),float(self.entry_EA_pitch.get()),  float(self.entry_EA_roll.get()));
         self.M = np.dot(rotM, self.M)
         self.setRotMatrix(rotM)
-        
+        self.rotMToAngleAxis(self.M);
+        self.rotMToRotationVector(self.M);
+        self.rotMToQuat(self.M);
         self.update_cube()
 
 
@@ -582,7 +591,9 @@ class Arcball(customtkinter.CTk):
         rotM = quaternion_rotation_matrix(Q);
         self.M = np.dot(rotM, self.M)
         self.setRotMatrix(rotM)
-        
+        self.rotMToAngleAxis(self.M);
+        self.rotMToRotationVector(self.M);
+        self.rotMToEuler(self.M);
         self.update_cube()
 
 
