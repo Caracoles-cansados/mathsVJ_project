@@ -378,7 +378,7 @@ class Arcball(customtkinter.CTk):
             rotM[2][2] = 0
         
 
-        self.rotM = rotM;
+        
 
         self.entry_RotM_11.insert(0,rotM[0][0])
         self.entry_RotM_12.insert(0,rotM[0][1])
@@ -406,9 +406,11 @@ class Arcball(customtkinter.CTk):
         R = rotM
 
         angle = np.arccos((np.trace(R) - 1) / 2)
-        
-        axis = (R - R.T) / (2 * np.sin(angle))
-        axis_org = np.array([axis[2, 1], axis[0, 2], axis[1, 0]])
+        if(angle != 0):
+            axis = (R - R.T) / (2 * np.sin(angle))
+            axis_org = np.array([axis[2, 1], axis[0, 2], axis[1, 0]])
+        else:
+            axis_org = np.array([1,0,0])
 
         angle = np.rad2deg(angle)
 
@@ -433,8 +435,11 @@ class Arcball(customtkinter.CTk):
         
 
 
-        axis = (R - R.T) / (2 * np.sin(angle))
-        axis_org = np.array([axis[2, 1], axis[0, 2], axis[1, 0]])
+        if(angle != 0):
+            axis = (R - R.T) / (2 * np.sin(angle))
+            axis_org = np.array([axis[2, 1], axis[0, 2], axis[1, 0]])
+        else:
+            axis_org = np.array([1,0,0])
 
         rotV = axis_org * np.rad2deg(angle);
 
@@ -471,8 +476,11 @@ class Arcball(customtkinter.CTk):
         R = rotM
 
         angle = np.arccos((np.trace(R) - 1) / 2)
-        axis = (R - R.T) / (2 * np.sin(angle))
-        axis_org = np.array([axis[2, 1], axis[0, 2], axis[1, 0]])
+        if(angle != 0):
+            axis = (R - R.T) / (2 * np.sin(angle))
+            axis_org = np.array([axis[2, 1], axis[0, 2], axis[1, 0]])
+        else:
+            axis_org = np.array([1,0,0])
 
         Q = np.zeros([4]);
         Q[0] = np.cos(angle/2)
@@ -508,6 +516,52 @@ class Arcball(customtkinter.CTk):
         rotM = np.eye(3);
         self.M = rotM.dot(self.M)
         self.setRotMatrix(rotM)
+        #self.rotMToAngleAxis(rotM);
+        #self.rotMToRotationVector(rotM);
+        #self.rotMToEuler(rotM);
+        #self.rotMToQuat(rotM);
+
+
+        #AA
+        self.entry_AA_angle.delete(0,99)
+        self.entry_AA_angle.insert(0, 0)
+
+        self.entry_AA_ax1.delete(0,99);
+        self.entry_AA_ax2.delete(0,99);
+        self.entry_AA_ax3.delete(0,99);
+        self.entry_AA_ax1.insert(0, 1);
+        self.entry_AA_ax2.insert(0, 0);
+        self.entry_AA_ax3.insert(0, 0);
+
+        #RV
+        self.entry_rotV_1.delete(0,99);
+        self.entry_rotV_2.delete(0,99);
+        self.entry_rotV_3.delete(0,99);
+        self.entry_rotV_1.insert(0, 0);
+        self.entry_rotV_2.insert(0, 0);
+        self.entry_rotV_3.insert(0, 0);
+
+        #EA
+        self.entry_EA_pitch.delete(0,99);
+        self.entry_EA_yaw.delete(0,99);
+        self.entry_EA_roll.delete(0,99);
+        self.entry_EA_pitch.insert(0, 0);
+        self.entry_EA_yaw.insert(0, 0);
+        self.entry_EA_roll.insert(0, 0);
+
+
+        #Reset quat
+        self.entry_quat_0.delete(0,99)
+        self.entry_quat_1.delete(0,99)
+        self.entry_quat_2.delete(0,99)
+        self.entry_quat_3.delete(0,99)
+        self.entry_quat_0.insert(0,1)
+        self.entry_quat_1.insert(0,0)
+        self.entry_quat_2.insert(0,0)
+        self.entry_quat_3.insert(0,0)
+
+
+        self.rotM = rotM
 
 
         self.update_cube() #Update the cube
@@ -520,8 +574,16 @@ class Arcball(customtkinter.CTk):
         """
         #Example on hot to get values from entries:
        
-        self.resetbutton_pressed()
-        
+        #self.resetbutton_pressed()
+        self.M = np.array(
+            [[ -1,  -1, 1],   #Node 0
+            [ -1,   1, 1],    #Node 1
+            [1,   1, 1],      #Node 2
+            [1,  -1, 1],      #Node 3
+            [-1,  -1, -1],    #Node 4
+            [-1,  1, -1],     #Node 5
+            [1,   1, -1],     #Node 6
+            [1,  -1, -1]], dtype=float).transpose()
 
         angle = float(self.entry_AA_angle.get())
         axisX = float(self.entry_AA_ax1.get())
@@ -540,6 +602,7 @@ class Arcball(customtkinter.CTk):
         self.rotMToRotationVector(rotM);
         self.rotMToEuler(rotM);
         self.rotMToQuat(rotM);
+        self.rotM = rotM
         self.update_cube()
         
 
@@ -548,7 +611,16 @@ class Arcball(customtkinter.CTk):
         """
         Event triggered function on the event of a push on the button button_rotV 
         """
-        self.resetbutton_pressed()
+        #self.resetbutton_pressed()
+        self.M = np.array(
+            [[ -1,  -1, 1],   #Node 0
+            [ -1,   1, 1],    #Node 1
+            [1,   1, 1],      #Node 2
+            [1,  -1, 1],      #Node 3
+            [-1,  -1, -1],    #Node 4
+            [-1,  1, -1],     #Node 5
+            [1,   1, -1],     #Node 6
+            [1,  -1, -1]], dtype=float).transpose()
 
         rV = np.array([[float(self.entry_rotV_1.get())],[float(self.entry_rotV_2.get())],[float(self.entry_rotV_3.get())]]);
         axisSacado = rV / np.linalg.norm(rV)
@@ -560,6 +632,7 @@ class Arcball(customtkinter.CTk):
         self.rotMToAngleAxis(rotM);
         self.rotMToEuler(rotM);
         self.rotMToQuat(rotM);
+        self.rotM = rotM
         self.update_cube()
 
 
@@ -571,7 +644,16 @@ class Arcball(customtkinter.CTk):
         Event triggered function on the event of a push on the button button_EA
         """
         
-        self.resetbutton_pressed()
+        #self.resetbutton_pressed()
+        self.M = np.array(
+            [[ -1,  -1, 1],   #Node 0
+            [ -1,   1, 1],    #Node 1
+            [1,   1, 1],      #Node 2
+            [1,  -1, 1],      #Node 3
+            [-1,  -1, -1],    #Node 4
+            [-1,  1, -1],     #Node 5
+            [1,   1, -1],     #Node 6
+            [1,  -1, -1]], dtype=float).transpose()
         
         rotM = eAngles2rotM(float(self.entry_EA_yaw.get()),float(self.entry_EA_pitch.get()),  float(self.entry_EA_roll.get()));
         self.M = np.dot(rotM, self.M)
@@ -579,6 +661,7 @@ class Arcball(customtkinter.CTk):
         self.rotMToAngleAxis(rotM);
         self.rotMToRotationVector(rotM);
         self.rotMToQuat(rotM);
+        self.rotM = rotM
         self.update_cube()
 
 
@@ -591,7 +674,16 @@ class Arcball(customtkinter.CTk):
         Event triggered function on the event of a push on the button button_quat
         """
 
-        self.resetbutton_pressed()
+        #self.resetbutton_pressed()
+        self.M = np.array(
+            [[ -1,  -1, 1],   #Node 0
+            [ -1,   1, 1],    #Node 1
+            [1,   1, 1],      #Node 2
+            [1,  -1, 1],      #Node 3
+            [-1,  -1, -1],    #Node 4
+            [-1,  1, -1],     #Node 5
+            [1,   1, -1],     #Node 6
+            [1,  -1, -1]], dtype=float).transpose()
 
         Q = np.zeros(4)
         Q[0] = float(self.entry_quat_0.get());
@@ -607,6 +699,7 @@ class Arcball(customtkinter.CTk):
         self.rotMToAngleAxis(rotM);
         self.rotMToRotationVector(rotM);
         self.rotMToEuler(rotM);
+        self.rotM = rotM
         self.update_cube()
 
 
@@ -678,13 +771,13 @@ class Arcball(customtkinter.CTk):
                 
 
                 self.M = RotM.dot(self.M)  # Modify the vertices matrix with a rotation matrix M
+                self.rotM = RotM.dot(self.rotM);
 
-
-                self.setRotMatrix(self.M)
-                self.rotMToAngleAxis(RotM);
-                self.rotMToRotationVector(RotM);
-                self.rotMToEuler(RotM);
-                self.rotMToQuat(RotM);
+                self.setRotMatrix(self.rotM)
+                self.rotMToAngleAxis(self.rotM);
+                self.rotMToRotationVector(self.rotM);
+                self.rotMToEuler(self.rotM);
+                self.rotMToQuat(self.rotM);
                 self.update_cube()  # Update the cube
 
 
