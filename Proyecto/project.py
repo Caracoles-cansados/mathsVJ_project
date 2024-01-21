@@ -29,9 +29,7 @@ def Eaa2rotM(angle, axis):
     
 
     R = np.eye(3) * np.cos(np.radians(angle)) + (1 - np.cos(np.radians(angle))) * np.outer(axis, axis) + np.sin(np.radians(angle)) * np.array([[0, -axis[2, 0], axis[1, 0]], [axis[2, 0], 0, -axis[0, 0]], [-axis[1, 0], axis[0, 0], 0]])
-    
-  
-    print(R)
+
     return R
 
 
@@ -328,6 +326,7 @@ class Arcball(customtkinter.CTk):
         self.entry_RotM_33.grid(row=2, column=3, padx=(2,0), pady=(2,0), sticky="ew")
 
         self.lastM = np.array([0,0,0])
+        self.rotM = np.eye(3)
     
 
 
@@ -337,7 +336,7 @@ class Arcball(customtkinter.CTk):
         """
 
         rotM = rotM.copy();
-
+       
         self.entry_RotM_11.configure(state="normal")
         self.entry_RotM_12.configure(state="normal")
         self.entry_RotM_13.configure(state="normal")
@@ -359,27 +358,27 @@ class Arcball(customtkinter.CTk):
         self.entry_RotM_33.delete(0, 99)
 
         
-        if(rotM[0][0] < 1.0e-20):
+        if(abs(rotM[0][0]) < 1.0e-16):
             rotM[0][0] = 0
-        if(rotM[0][1] < 1.0e-20):
+        if(abs(rotM[0][1]) < 1.0e-16):
             rotM[0][1] = 0
-        if(rotM[0][2] < 1.0e-20):
+        if(abs(rotM[0][2]) < 1.0e-16):
             rotM[0][2] = 0
-        if(rotM[1][0] < 1.0e-20):
+        if(abs(rotM[1][0]) < 1.0e-16):
             rotM[1][0] = 0
-        if(rotM[1][1] < 1.0e-20):
+        if(abs(rotM[1][1]) < 1.0e-16):
             rotM[1][1] = 0
-        if(rotM[1][2] < 1.0e-20):
+        if(abs(rotM[1][2]) < 1.0e-16):
             rotM[1][2] = 0
-        if(rotM[2][0] < 1.0e-20):
+        if(abs(rotM[2][0]) < 1.0e-16):
             rotM[2][0] = 0
-        if(rotM[2][1] < 1.0e-20):
+        if(abs(rotM[2][1]) < 1.0e-16):
             rotM[2][1] = 0
-        if(rotM[2][2] < 1.0e-20):
+        if(abs(rotM[2][2]) < 1.0e-16):
             rotM[2][2] = 0
         
 
-
+        self.rotM = rotM;
 
         self.entry_RotM_11.insert(0,rotM[0][0])
         self.entry_RotM_12.insert(0,rotM[0][1])
@@ -403,10 +402,11 @@ class Arcball(customtkinter.CTk):
 
     def rotMToAngleAxis(self, rotM):
 
-        print(rotM)
-        R = rotM[:3,:3]
+        
+        R = rotM
 
         angle = np.arccos((np.trace(R) - 1) / 2)
+        
         axis = (R - R.T) / (2 * np.sin(angle))
         axis_org = np.array([axis[2, 1], axis[0, 2], axis[1, 0]])
 
@@ -426,13 +426,17 @@ class Arcball(customtkinter.CTk):
         
     
     def rotMToRotationVector(self, rotM):
-        R = rotM[:3,:3]
+        R = rotM
 
         angle = np.arccos((np.trace(R) - 1) / 2)
+
+        
+
+
         axis = (R - R.T) / (2 * np.sin(angle))
         axis_org = np.array([axis[2, 1], axis[0, 2], axis[1, 0]])
 
-        rotV = axis_org * angle;
+        rotV = axis_org * np.rad2deg(angle);
 
 
        
@@ -445,10 +449,15 @@ class Arcball(customtkinter.CTk):
         
     
     def rotMToEuler(self, rotM):
-        R = rotM[:3,:3]
+        R = rotM
+
         pitch = np.arcsin(-R[2][0])
         yaw = np.arctan2(R[1][0]/np.cos(pitch), R[0][0]/np.cos(pitch))
         roll = np.arctan2(R[2][1]/np.cos(pitch), R[2][2]/np.cos(pitch))
+
+        pitch = np.rad2deg(pitch)
+        yaw = np.rad2deg(yaw)
+        roll = np.rad2deg(roll)
 
         self.entry_EA_pitch.delete(0,99);
         self.entry_EA_yaw.delete(0,99);
@@ -459,7 +468,7 @@ class Arcball(customtkinter.CTk):
 
     def rotMToQuat(self, rotM):
 
-        R = rotM[:3,:3]
+        R = rotM
 
         angle = np.arccos((np.trace(R) - 1) / 2)
         axis = (R - R.T) / (2 * np.sin(angle))
@@ -497,7 +506,7 @@ class Arcball(customtkinter.CTk):
             [1,  -1, -1]], dtype=float).transpose()
         
         rotM = np.eye(3);
-
+        self.M = rotM.dot(self.M)
         self.setRotMatrix(rotM)
 
 
@@ -522,11 +531,15 @@ class Arcball(customtkinter.CTk):
     
         #self.M = rotM@self.M 
         
+        
         self.M = np.dot(rotM, self.M)
+        
+
+
         self.setRotMatrix(rotM)
-        self.rotMToRotationVector(self.M);
-        self.rotMToEuler(self.M);
-        self.rotMToQuat(self.M);
+        self.rotMToRotationVector(rotM);
+        self.rotMToEuler(rotM);
+        self.rotMToQuat(rotM);
         self.update_cube()
         
 
@@ -544,9 +557,9 @@ class Arcball(customtkinter.CTk):
         rotM = Eaa2rotM(angleSacado, axisSacado)
         self.M = np.dot(rotM, self.M)
         self.setRotMatrix(rotM)
-        self.rotMToAngleAxis(self.M);
-        self.rotMToEuler(self.M);
-        self.rotMToQuat(self.M);
+        self.rotMToAngleAxis(rotM);
+        self.rotMToEuler(rotM);
+        self.rotMToQuat(rotM);
         self.update_cube()
 
 
@@ -563,9 +576,9 @@ class Arcball(customtkinter.CTk):
         rotM = eAngles2rotM(float(self.entry_EA_yaw.get()),float(self.entry_EA_pitch.get()),  float(self.entry_EA_roll.get()));
         self.M = np.dot(rotM, self.M)
         self.setRotMatrix(rotM)
-        self.rotMToAngleAxis(self.M);
-        self.rotMToRotationVector(self.M);
-        self.rotMToQuat(self.M);
+        self.rotMToAngleAxis(rotM);
+        self.rotMToRotationVector(rotM);
+        self.rotMToQuat(rotM);
         self.update_cube()
 
 
@@ -591,9 +604,9 @@ class Arcball(customtkinter.CTk):
         rotM = quaternion_rotation_matrix(Q);
         self.M = np.dot(rotM, self.M)
         self.setRotMatrix(rotM)
-        self.rotMToAngleAxis(self.M);
-        self.rotMToRotationVector(self.M);
-        self.rotMToEuler(self.M);
+        self.rotMToAngleAxis(rotM);
+        self.rotMToRotationVector(rotM);
+        self.rotMToEuler(rotM);
         self.update_cube()
 
 
@@ -612,13 +625,13 @@ class Arcball(customtkinter.CTk):
 
             x_fig,y_fig= self.canvas_coordinates_to_figure_coordinates(event.x,event.y) #Extract viewport coordinates
            
-            radius = 3
+            radius = 20
 
             if (x_fig**2 + y_fig**2) < 0.5 * radius**2:
                 Z = np.sqrt(radius**2 - x_fig**2 - y_fig**2)
                 m0 = np.array([x_fig, y_fig, Z])
             else:
-                Z = (radius**2) / 2 * np.sqrt(x_fig**2 + y_fig**2)
+                Z = (radius**2) / (2 * np.sqrt(x_fig**2 + y_fig**2))
                 m0 = np.array([x_fig, y_fig, Z]) / np.sqrt(x_fig**2 + y_fig**2 + Z**2)
 
             self.lastM = m0;
@@ -646,7 +659,7 @@ class Arcball(customtkinter.CTk):
                     Z = np.sqrt(radius**2 - x_fig**2 - y_fig**2)
                     m1 = np.array([x_fig, y_fig, Z])
                 else:
-                    Z = (radius**2) / 2 * np.sqrt(x_fig**2 + y_fig**2)
+                    Z = (radius**2) / (2 * np.sqrt(x_fig**2 + y_fig**2))
                     m1 = radius*(np.array([x_fig, y_fig, Z])) / np.sqrt(x_fig**2 + y_fig**2 + Z**2)
 
 
@@ -656,17 +669,22 @@ class Arcball(customtkinter.CTk):
                 axisNew[1] = axis[2]
                 axisNew[2] = axis[0]
                 # Obtain angle
-                angle = np.degrees(np.arccos(np.dot(m1, self.lastM) / (np.linalg.norm(m1) * np.linalg.norm(self.lastM)))) * 1
+                angle = np.rad2deg(np.arccos(np.dot(m1, self.lastM) / (np.linalg.norm(m1) * np.linalg.norm(self.lastM)))) * 1
 
 
                 self.lastM = m1.copy()
                 RotM = Eaa2rotM(angle, axisNew);
+
+                
+
                 self.M = RotM.dot(self.M)  # Modify the vertices matrix with a rotation matrix M
+
+
                 self.setRotMatrix(self.M)
-                self.rotMToAngleAxis(self.M);
-                self.rotMToRotationVector(self.M);
-                self.rotMToEuler(self.M);
-                self.rotMToQuat(self.M);
+                self.rotMToAngleAxis(RotM);
+                self.rotMToRotationVector(RotM);
+                self.rotMToEuler(RotM);
+                self.rotMToQuat(RotM);
                 self.update_cube()  # Update the cube
 
 
