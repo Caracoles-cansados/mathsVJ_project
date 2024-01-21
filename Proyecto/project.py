@@ -742,43 +742,44 @@ class Arcball(customtkinter.CTk):
 
             radius = 20
 
-            # Assuming xmouse and ymouse are defined
+            
             dist = x_fig*x_fig+y_fig*y_fig
             
 
-            if dist < 40:
+            
 
-                if (x_fig**2 + y_fig**2) < 0.5 * radius**2:
-                    Z = np.sqrt(radius**2 - x_fig**2 - y_fig**2)
-                    m1 = np.array([x_fig, y_fig, Z])
-                else:
-                    Z = (radius**2) / (2 * np.sqrt(x_fig**2 + y_fig**2))
-                    m1 = radius*(np.array([x_fig, y_fig, Z])) / np.sqrt(x_fig**2 + y_fig**2 + Z**2)
-
-
-                axis = -np.cross(m1, self.lastM)
-                axisNew = np.array([0,0,0]);
-                axisNew[0] = -axis[1]
-                axisNew[1] = axis[2]
-                axisNew[2] = axis[0]
-                # Obtain angle
-                angle = np.rad2deg(np.arccos(np.dot(m1, self.lastM) / (np.linalg.norm(m1) * np.linalg.norm(self.lastM)))) * 1
+            if (x_fig**2 + y_fig**2) < 0.5 * radius**2:
+                Z = np.sqrt(radius**2 - x_fig**2 - y_fig**2)
+                m1 = np.array([x_fig, y_fig, Z])
+            else:
+                Z = (radius**2) / (2 * np.sqrt(x_fig**2 + y_fig**2))
+                m1 = radius*(np.array([x_fig, y_fig, Z])) / np.sqrt(x_fig**2 + y_fig**2 + Z**2)
 
 
-                self.lastM = m1.copy()
-                RotM = Eaa2rotM(angle, axisNew);
+            axis = -np.cross(m1, self.lastM)
+            axisNew = np.array([0,0,0]);
+            axisNew[0] = -axis[1]
+            axisNew[1] = axis[2]
+            axisNew[2] = axis[0]
 
-                
+            
+            angle = np.rad2deg(np.arccos(np.dot(m1, self.lastM) / (np.linalg.norm(m1) * np.linalg.norm(self.lastM)))) * 3
 
-                self.M = RotM.dot(self.M)  # Modify the vertices matrix with a rotation matrix M
-                self.rotM = RotM.dot(self.rotM);
 
-                self.setRotMatrix(self.rotM)
-                self.rotMToAngleAxis(self.rotM);
-                self.rotMToRotationVector(self.rotM);
-                self.rotMToEuler(self.rotM);
-                self.rotMToQuat(self.rotM);
-                self.update_cube()  # Update the cube
+            self.lastM = m1.copy()
+            RotM = Eaa2rotM(angle, axisNew);
+
+            
+
+            self.M = RotM.dot(self.M) 
+            self.rotM = RotM.dot(self.rotM);
+
+            self.setRotMatrix(self.rotM)
+            self.rotMToAngleAxis(self.rotM);
+            self.rotMToRotationVector(self.rotM);
+            self.rotMToEuler(self.rotM);
+            self.rotMToQuat(self.rotM);
+            self.update_cube()  # Update the cube
 
 
     def onrelease(self,event):
