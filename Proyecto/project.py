@@ -718,7 +718,7 @@ class Arcball(customtkinter.CTk):
 
             x_fig,y_fig= self.canvas_coordinates_to_figure_coordinates(event.x,event.y) #Extract viewport coordinates
            
-            radius = 20
+            radius = np.sqrt(3)
 
             if (x_fig**2 + y_fig**2) < 0.5 * radius**2:
                 Z = np.sqrt(radius**2 - x_fig**2 - y_fig**2)
@@ -740,13 +740,9 @@ class Arcball(customtkinter.CTk):
         if self.pressed: #Only triggered if previous click
             x_fig,y_fig= self.canvas_coordinates_to_figure_coordinates(event.x,event.y) #Extract viewport coordinates
 
-            radius = 20
-
+            radius = np.sqrt(3)
             
             dist = x_fig*x_fig+y_fig*y_fig
-            
-
-            
 
             if (x_fig**2 + y_fig**2) < 0.5 * radius**2:
                 Z = np.sqrt(radius**2 - x_fig**2 - y_fig**2)
@@ -757,14 +753,16 @@ class Arcball(customtkinter.CTk):
 
 
             axis = -np.cross(m1, self.lastM)
-            axisNew = np.array([0,0,0]);
+            axisNew = np.array([0.0,0.0,0.0]);
             axisNew[0] = -axis[1]
             axisNew[1] = axis[2]
             axisNew[2] = axis[0]
 
             
-            angle = np.rad2deg(np.arccos(np.dot(m1, self.lastM) / (np.linalg.norm(m1) * np.linalg.norm(self.lastM)))) * 3
-
+            angle = np.rad2deg(np.arccos(np.dot(m1, self.lastM) / (np.linalg.norm(m1) * np.linalg.norm(self.lastM)))) * 1
+            print(axisNew)
+            print(angle)
+            axisNew = axisNew / np.linalg.norm(axisNew)
 
             self.lastM = m1.copy()
             RotM = Eaa2rotM(angle, axisNew);
